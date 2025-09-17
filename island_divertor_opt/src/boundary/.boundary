@@ -1,0 +1,25 @@
+[fpp11wall:torosurf]
+filename: wall.txt
+stellarator_symmetry: False
+units: cm
+
+[classical_fwd:torosurf]
+filename: classical_fwd.txt
+stellarator_symmetry: False
+units: cm
+
+[classical_bwd:torosurf]
+filename: classical_bwd.txt
+stellarator_symmetry: False
+units: cm
+
+[cap_fwd:torosurf]
+filename: cap_fwd.txt
+stellarator_symmetry: False
+units: cm
+
+[cap_bwd:torosurf]
+filename: cap_bwd.txt
+stellarator_symmetry: False
+units: cm
+

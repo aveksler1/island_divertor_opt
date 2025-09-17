@@ -1,0 +1,3 @@
+[equi3d_mgrid]
+filename = mgrid_fpp_jpp_vacuum.nc
+amplitudes: [1.0]
