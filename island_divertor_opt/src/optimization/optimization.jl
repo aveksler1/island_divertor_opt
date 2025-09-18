@@ -12,6 +12,7 @@ using Measures
 using NaNStatistics
 using Optim
 using PyCall
+using OptimizationBBO
 include("classical_divertor.jl")
 
 HEAT_FLUX_WEIGHT = 1
@@ -32,7 +33,7 @@ function build_divertor()
     """
     # Build divertor from json files
 
-    json_input_files = ["closed_classical_divertor_fwd.json", "closed_classical_divertor_bwd.json"]
+    json_input_files = ["classical_divertor_fwd.json", "classical_divertor_bwd.json"]
 
     for f in json_input_files
         make_classical_divertor_from_json(f; verbose=false)
@@ -71,7 +72,7 @@ mkpath(joinpath(DATABASE_PATH, DATABASE_NAME))
 println("Made path ", joinpath(DATABASE_PATH, DATABASE_NAME))
 
 # --- Initialize starting parameters
-json_input_file = "closed_classical_divertor_fwd.json"
+json_input_file = "classical_divertor_fwd.json"
 json_data = JSON3.read(json_input_file)
 island_boundary = readdlm(json_data.island_boundary_file,',')
 o_points = get_o_points(
@@ -90,14 +91,12 @@ function run_simulation(left_pt, right_pt, spline)
     writeable_json = copy(read_only_json)
     r1, z1 = spline(right_pt)
     r2, z2 = spline(left_pt)
+    # Double check that passing in the left point to the right place
+    # It should be! Checked on 9/17/2025
     writeable_json[:r1] = r1
     writeable_json[:z1] = z1
     writeable_json[:r2] = r2
     writeable_json[:z2] = z2
-    # writeable_json[:r1] = right_pt[1]
-    # writeable_json[:z1] = right_pt[1]
-    # writeable_json[:r2] = left_pt[1]
-    # writeable_json[:z2] = left_pt[1]
     open(joinpath(DATABASE_PATH, DATABASE_NAME, "classical_divertor_fwd.json"), "w") do io
         JSON3.write(io, writeable_json)
     end
@@ -111,7 +110,7 @@ function run_simulation(left_pt, right_pt, spline)
     return q, hit_percentage
 end
 
-function f(params)
+function cost(params)
     """
     Passes parameters to run simulation and tries to minimize this functions
     
@@ -134,27 +133,32 @@ x0 = [theta_li, theta_ri]
 lower = [0, 0]
 upper = [2*pi, 2*pi]
 
-function g(theta_l, theta_r)
-    dtheta = pi/60
-    grad_theta_l = (
-        -f([theta_l + 2*dtheta, theta_r]) + 
-        8*f([theta_l + dtheta, theta_r]) - 
-        8*f([theta_l - dtheta, theta_r]) + 
-        f([theta_l - 2*dtheta, theta_r])
-    ) / (12*dtheta)
-    grad_theta_r = (
-        -f([theta_l, theta_r+2*dtheta]) + 
-        8*f([theta_l,  theta_r+dtheta]) - 
-        8*f([theta_l, theta_r - dtheta]) + 
-        f([theta_l, theta_r - 2*dtheta])
-    ) / (12*dtheta)
-    return [grad_theta_l, grad_theta_r]
-end
 
 # Perform the optimization
+f = OptimizationFunction(cost)
+prob = Optimization.OptimizationProblem(cost, x0, lb = lower, ub = upper)
+sol = solve(prob, BBO_adaptive_de_rand_1_bin_radiuslimited(), maxiters=100)
+
+# function g(theta_l, theta_r)
+#     dtheta = pi/60
+#     grad_theta_l = (
+#         -f([theta_l + 2*dtheta, theta_r]) + 
+#         8*f([theta_l + dtheta, theta_r]) - 
+#         8*f([theta_l - dtheta, theta_r]) + 
+#         f([theta_l - 2*dtheta, theta_r])
+#     ) / (12*dtheta)
+#     grad_theta_r = (
+#         -f([theta_l, theta_r+2*dtheta]) + 
+#         8*f([theta_l,  theta_r+dtheta]) - 
+#         8*f([theta_l, theta_r - dtheta]) + 
+#         f([theta_l, theta_r - 2*dtheta])
+#     ) / (12*dtheta)
+#     return [grad_theta_l, grad_theta_r]
+# end
+
 # od = OnceDifferentiable(f, g; inplace=false)
 # result = optimize(od, lower, upper, x0, Fminbox(LBFGS()); inplace=false)
-res = optimize(f, g, lower, upper, x0, GradientDescent())
+# res = optimize(f, g, lower, upper, x0, GradientDescent())
                # Optim.Options(g_tol = 1e-12,
                #               iterations = 10,
                #               store_trace = true,

@@ -20,5 +20,6 @@
     "right_extension": 0.2,
     "left_extension": 0.2,
     "use_island_center": false,
-    "closed": true
+    "closed": true,
+    "mode": 0
 }
