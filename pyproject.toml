@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "island_divertor_opt"
+version = "0.0.1"
+authors = [
+  { name="Avigdor Veksler", email="av3249@columbia.edu" },
+]
+description = "Island divertor optimization framework"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/aveksler1/island_divertor_opt"
