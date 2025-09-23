@@ -7,8 +7,12 @@ import argparse
 
 # Parse input arguments
 parser = argparse.ArgumentParser()
+parser.add_argument("project_path",
+    help= "Path to output file.",
+    type=str,
+)
 parser.add_argument("output_file", 
-    help="Path to output file. Will be one of heat_flux.nc or strike_points.nc",
+    help="Output file name. Will be one of heat_flux.nc or strike_points.nc",
     type=str,
 )
 parser.add_argument("data_key", 
@@ -17,6 +21,7 @@ parser.add_argument("data_key",
     type=str,
 )
 args = parser.parse_args()
+project_path = args.project_path
 output_file = args.output_file
 data_key = args.data_key
 
