@@ -10,7 +10,7 @@ using Plots
 using Statistics
 using Measures
 using NaNStatistics
-include("classical_divertor_l-_r-.jl")
+include("classical_divertor_final.jl")
 
 json_input_files = [
     "classical_divertor_fwd.json", 
