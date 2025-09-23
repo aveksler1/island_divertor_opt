@@ -1,5 +1,6 @@
 from moose.geometry import Torosurf, Hypersurf3d
 from flare.mmesh import tasks
+from flare.mmesh.unstructured import SolidSurfaces
 from mpi4py import MPI
 import sys
 import os
@@ -18,7 +19,12 @@ if rank == 0:
     target3 = Torosurf.loadtxt("../boundary/classical_fwd_cap.txt", units="cm")
     target4 = Torosurf.loadtxt("../boundary/classical_bwd_cap.txt", units="cm")
     
-    boundary = Hypersurf3d({},
+    # boundary = Hypersurf3d({},
+    #     {"wall": target0, "classical_fwd": target1, "classical_bwd": target2, 
+    #     "classical_fwd_cap": target3, "classical_bwd_cap": target4}
+    # )
+
+    boundary = SolidSurfaces(
         {"wall": target0, "classical_fwd": target1, "classical_bwd": target2, 
         "classical_fwd_cap": target3, "classical_bwd_cap": target4}
     )
@@ -27,7 +33,10 @@ if rank == 0:
 
 comm.barrier()
 
-tasks.init("/global/homes/a/aveksler/t1e/RUNS/input_files/grid/mmesh.nc", "boundary.nc", "tracing.nc")
+# tasks.init("/global/homes/a/aveksler/t1e/RUNS/input_files/grid/mmesh.nc", "boundary.nc", "tracing.nc")
+tasks.init_workspace("/global/homes/a/aveksler/t1e/RUNS/input_files/grid/mmesh.nc")
+tasks.set_boundary("boundary.nc")
+
 
 tasks.strike_point_density(1e-6, 100000, output="strike_points.nc")
 
