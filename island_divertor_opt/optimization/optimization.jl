@@ -12,181 +12,111 @@ using Measures
 using NaNStatistics
 using Optim
 using PyCall
+using Optimization
 using OptimizationBBO
-include("classical_divertor.jl")
 
-HEAT_FLUX_WEIGHT = 1
-CAP_WEIGHT = 1
+# --- Define iteration count
+iter = 0 
+root_dir = pwd()
+prev_cost = 0
+flare_post = pyimport("island_divertor_opt.optimization.flare_postprocessing")
 
-DATABASE_PATH = "/global/u2/a/aveksler/DATABASE/flare"
+println("Root Directory: $(root_dir)")
 
-# --- Read in DATABASE name
-DATABASE_NAME = ARGS[1]
-
-function build_divertor()
-    """
-    A function to build the divertor given the starting points and the strike 
-    angle. 
-
-    Builds JSON file, uses classical_divertor_improved to build divertor, and 
-    passes data to FLARE. 
-    """
-    # Build divertor from json files
-
-    json_input_files = ["classical_divertor_fwd.json", "classical_divertor_bwd.json"]
-
-    for f in json_input_files
-        make_classical_divertor_from_json(f; verbose=false)
-    end
-    
-    path = joinpath(DATABASE_PATH, DATABASE_NAME)
-    run(`mv closed_classical_fwd.txt closed_classical_bwd.txt closed_classical_fwd_cap.txt closed_classical_bwd_cap.txt $path`)
-    run(`cp /global/homes/a/aveksler/DATABASE/flare/input_files/.boundary /global/homes/a/aveksler/DATABASE/flare/input_files/mmesh.nc  /global/homes/a/aveksler/DATABASE/flare/input_files/wall.txt $path`)
-end
-
-function get_island_spline(json_data, island_boundary, o_points)
-    """
-    Function that gets the island boundary and returns splines that can be used to generate starting point for the divertor based
-    on parameters 0 - 2*pi.
-    """
-    points_per_period = json_data.points_per_period
-    island = json_data.island
-    n_islands = json_data.n_islands
-    direction = json_data.direction
-    eval_direction = json_data.eval_direction
-    startϕdeg = json_data.start_phi_deg
-    ix = Int(startϕdeg*2) + 1
-
-    # Getting the spline of the island boundary
-    risl, zisl = get_island_boundary(island_boundary, ix, island, n_islands, points_per_period)
-    # (r, z) of O-point
-    ro = o_points[ix, 1]
-    zo = o_points[ix, 2]
-    # makes a spline of the island boundary
-    spl = make_island_spline(risl, zisl, ro, zo, eval_direction)
-    return spl
-end
-
-mkpath(joinpath(DATABASE_PATH, DATABASE_NAME))
-
-println("Made path ", joinpath(DATABASE_PATH, DATABASE_NAME))
-
-# --- Initialize starting parameters
-json_input_file = "classical_divertor_fwd.json"
-json_data = JSON3.read(json_input_file)
-island_boundary = readdlm(json_data.island_boundary_file,',')
-o_points = get_o_points(
-    json_data.o_points_file, json_data.island, json_data.n_islands
-)
-spline = get_island_spline(json_data, island_boundary, o_points)
-
-function run_simulation(left_pt, right_pt, spline)
+function run_simulation(left_pt, right_pt)
     """
     From input parameters (left starting point, right starting point
     strike angle), builds a divertor and runs flare to evaluate divertor
     performance.
     """
-    # First we load in the JSON file and modify the points
-    read_only_json = JSON3.read(joinpath(DATABASE_NAME, "classical_divertor_fwd.json"))
-    writeable_json = copy(read_only_json)
-    r1, z1 = spline(right_pt)
-    r2, z2 = spline(left_pt)
-    # Double check that passing in the left point to the right place
-    # It should be! Checked on 9/17/2025
-    writeable_json[:r1] = r1
-    writeable_json[:z1] = z1
-    writeable_json[:r2] = r2
-    writeable_json[:z2] = z2
-    open(joinpath(DATABASE_PATH, DATABASE_NAME, "classical_divertor_fwd.json"), "w") do io
-        JSON3.write(io, writeable_json)
-    end
+    global iter
+    global root_dir
+    global flare_post
 
-    classical_fwd, classical_bwd = build_divertor()
+    println("Setting up environment.")
+    cd(root_dir)
+    # Setup folders inside of opt run
+    dirname = "opt_$(iter)"
+    run(`mkdir $dirname`)
+    cd("$dirname")
+    run(`mkdir boundary`)
+    run(`mkdir output`)
 
-    run(`mpirun -np 64 run_flare.py $DATABASE_NAME`)
+    run(`cp /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_fwd.json .`)
+    run(`cp /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_bwd.json .`)
+    
+    println("Great Success!")
+    
+    println("Running divertor.")
 
-    pymodule = pyimport("flare_postprocessing") 
-    q, hit_percentage = pymodule.get_cost_vars()
-    return q, hit_percentage
+    # Make the actual divertor given the left point and right point
+    run(`julia /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/scripts/make_divertor_final.jl $left_pt $right_pt`)
+    println("Great Success!")
+    # Move the divertor into the boundary file
+    println("Moving files.")
+    run(`mv classical_fwd.txt classical_bwd.txt classical_fwd_cap.txt classical_bwd_cap.txt boundary`)
+    run(`cp /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/wall.txt boundary`)
+    println("Great Success!")
+    
+    # Enter the output folder
+    cd("output")
+    
+    # Run flare in the output folder
+    println("Running flare.")
+
+    run(`mpirun -np 64 python /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/scripts/run_flare.py $(pwd())`)
+    println("Great Success!")
+    
+    # # Performing postprocessing
+    dirname = "$root_dir/opt_$(iter)/output"
+
+    # Get cost vars 
+    println("Running postprocessing on dir $(dirname)...")
+    qpeak, qtot, cap_hits = flare_post.get_cost_vars(dirname)
+    println("Great Success!")
+
+    return qpeak, qtot, cap_hits
 end
 
-function cost(params)
+function cost(u, p)
     """
     Passes parameters to run simulation and tries to minimize this functions
-    
-    (heat_flux - target)? 
-    (strike_angle - target)?
-    negative sign on spread to maximize the spread?
     """
+    global iter
+    global flare_post
+    global prev_cost
     # Passes left and right point into run simulations
-    q, cap_hits = run_simulation(params[1], params[2], spline) 
-    return HEAT_FLUX_WEIGHTS*q^2 + CAP_WEIGHT*min(cap_hits^2, 0)
+    println("=================================================================")
+    lp = u[1]
+    rp = u[2]
+    println("Running sim on iter $iter; (left point, right point = ($lp, $rp))")
+    qpeak, qtot, cap_hits = run_simulation(u[1], u[2]) 
+    # Compute cost
+    money = flare_post.calculate_cost(qpeak, qtot, cap_hits)
+    println("Iter $iter: Cost = $money")
+    if iter != 1
+        println("Iter $iter: Cost = $money")
+        pchange = ((money - prev_cost)/prev_cost)*100
+        println("% cost change: $pchange")
+    else 
+        println("Iter $iter: Cost = $money")
+        prev_cost = money
+    end
+    flush(stdout)
+    # Increase iteration count
+    iter += 1
+
+    return money
 end
 
-
-theta_li = 1.2*pi
-theta_ri = (3/4)*pi
-
-# Initial parameter vector
-x0 = [theta_li, theta_ri]
-
-lower = [0, 0]
-upper = [2*pi, 2*pi]
-
+# Initial parameter vector and bounds
+theta_li = 4.1
+theta_ri = 1.3
+u0 = [theta_li, theta_ri]
+lower = [pi, 0]
+upper = [2*pi, pi]
 
 # Perform the optimization
-f = OptimizationFunction(cost)
-prob = Optimization.OptimizationProblem(cost, x0, lb = lower, ub = upper)
+# f = OptimizationFunction(cost)
+prob = Optimization.OptimizationProblem(cost, u0, lb = lower, ub = upper)
 sol = solve(prob, BBO_adaptive_de_rand_1_bin_radiuslimited(), maxiters=100)
-
-# function g(theta_l, theta_r)
-#     dtheta = pi/60
-#     grad_theta_l = (
-#         -f([theta_l + 2*dtheta, theta_r]) + 
-#         8*f([theta_l + dtheta, theta_r]) - 
-#         8*f([theta_l - dtheta, theta_r]) + 
-#         f([theta_l - 2*dtheta, theta_r])
-#     ) / (12*dtheta)
-#     grad_theta_r = (
-#         -f([theta_l, theta_r+2*dtheta]) + 
-#         8*f([theta_l,  theta_r+dtheta]) - 
-#         8*f([theta_l, theta_r - dtheta]) + 
-#         f([theta_l, theta_r - 2*dtheta])
-#     ) / (12*dtheta)
-#     return [grad_theta_l, grad_theta_r]
-# end
-
-# od = OnceDifferentiable(f, g; inplace=false)
-# result = optimize(od, lower, upper, x0, Fminbox(LBFGS()); inplace=false)
-# res = optimize(f, g, lower, upper, x0, GradientDescent())
-               # Optim.Options(g_tol = 1e-12,
-               #               iterations = 10,
-               #               store_trace = true,
-               #               show_trace = false,
-               #               show_warnings = true))
-
-
-# num = 100
-# r = zeros(num)
-# z = zeros(num)
-# thetas = range(0, stop=2*pi, length=num)
-# for (i, theta) in enumerate(thetas)
-#     _r, _z = spline(theta)
-#     r[i] = _r
-#     z[i] = _z
-# end
-
-# p = Plots.scatter(
-#     r, z,
-#     marker_z = thetas,
-#     markercolor = :inferno,
-#     colorbar = true,
-# )
-# savefig(p, "spline.png")
-# println(spline(0))
-# println(spline(pi/4))
-# println(spline(pi/2))
-# println(spline(pi))
-# println(spline(2*pi))
-
-# optimize(objective_function, params, LBFGS()) 
