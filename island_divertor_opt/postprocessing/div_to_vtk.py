@@ -25,7 +25,7 @@ project_path = args.project_path
 output_file = args.output_file
 data_key = args.data_key
 
-print("Loading in data...", flush = True)
+print("Loading in data...")
 
 data = Dataset.loadnc(output_file)
 p = data[data_key] 
@@ -33,7 +33,7 @@ p = data[data_key]
 data = p.plot(plot3d='vtk', vtk_show=None)
 
 for i, g in enumerate(data):
-    print(f"Saving boundary {i}", flush = True)
+    print(f"Saving boundary {i}")
 
     writer = vtk.vtkXMLStructuredGridWriter()
 

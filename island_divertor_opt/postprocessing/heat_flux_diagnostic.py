@@ -10,11 +10,10 @@ class HeatFluxDiagnostic(object):
     """
     Determines hit percentage on different divertor surfaces.
 
-    Mode 0: Use heat flux diagnostic
-    Mode 1: Use strike point diagnostic
     """
-    def __init__(self, project_path, verbose=False):
+    def __init__(self, project_path, power=8, verbose=False):
         self.project_path = project_path
+        # self.
         try:
             self.hflux = Dataset.loadnc(os.path.join(project_path, "heat_flux.nc"))
         except:
@@ -23,10 +22,8 @@ class HeatFluxDiagnostic(object):
             self.strike_points = Dataset.loadnc(os.path.join(project_path, "strike_points.nc"))
         except:
             print("No strike point diagnostic")
-        else:
-            raise Exception("Mode must be either 0 or 1!")
         self.verbose = verbose
-        self.power = 2 # MW
+        self.power = power # MW
 
     def calculate_peak_hflux(self):
         if not hasattr(self, 'hflux'):
@@ -40,7 +37,7 @@ class HeatFluxDiagnostic(object):
         if self.verbose:
             print(f"Peak Heat Flux: {self.peak_hflux}")
 
-    def calculate_total_heat(self, data):
+    def calculate_total_heat(self):
         """
         Assumes the divertor surfaces are surfaces 1 and 2
         0 - wall
@@ -49,11 +46,10 @@ class HeatFluxDiagnostic(object):
         3 - cap fwd
         4 - cap bwd
         """
-        # data = self.hflux['hload']
         self.total_q = 0
         for i in [0, 1, 2, 3, 4]:
-            hflux = data.values[i]
-            area = self.calculate_area(data, i)
+            hflux = (self.hflux['hload']*self.power).values[i]
+            area = self.hflux['area'].values[i]
             heat = hflux * area
             self.total_q += np.sum(heat)
             if self.verbose:
