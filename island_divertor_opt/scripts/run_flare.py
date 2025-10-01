@@ -19,11 +19,6 @@ if rank == 0:
     target3 = Torosurf.loadtxt("../boundary/classical_fwd_cap.txt", units="cm")
     target4 = Torosurf.loadtxt("../boundary/classical_bwd_cap.txt", units="cm")
     
-    # boundary = Hypersurf3d({},
-    #     {"wall": target0, "classical_fwd": target1, "classical_bwd": target2, 
-    #     "classical_fwd_cap": target3, "classical_bwd_cap": target4}
-    # )
-
     boundary = SolidSurfaces(
         {"wall": target0, "classical_fwd": target1, "classical_bwd": target2, 
         "classical_fwd_cap": target3, "classical_bwd_cap": target4}
