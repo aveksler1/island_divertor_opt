@@ -16,6 +16,7 @@ using Optimization
 using OptimizationBBO
 
 # --- Define iteration count
+CAP_COST = parse(Int, ARGS[1])
 iter = 0 
 root_dir = pwd()
 prev_cost = 0
@@ -33,7 +34,7 @@ function run_simulation(left_pt, right_pt)
     global root_dir
     global flare_post
 
-    println("Setting up environment.")
+    println("Setting up environment...")
     cd(root_dir)
     # Setup folders inside of opt run
     dirname = "opt_$(iter)"
@@ -44,38 +45,32 @@ function run_simulation(left_pt, right_pt)
 
     run(`cp /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_fwd.json .`)
     run(`cp /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_bwd.json .`)
-    
-    println("Great Success!")
-    
-    println("Running divertor.")
+        
+    println("Making divertor...")
 
     # Make the actual divertor given the left point and right point
     run(`julia /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/scripts/make_divertor_final.jl $left_pt $right_pt`)
-    println("Great Success!")
     # Move the divertor into the boundary file
-    println("Moving files.")
+    println("Moving files...")
     run(`mv classical_fwd.txt classical_bwd.txt classical_fwd_cap.txt classical_bwd_cap.txt boundary`)
     run(`cp /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/wall.txt boundary`)
-    println("Great Success!")
     
     # Enter the output folder
     cd("output")
     
     # Run flare in the output folder
-    println("Running flare.")
+    println("Running flare...")
 
     run(`mpirun -np 64 python /global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/scripts/run_flare.py $(pwd())`)
-    println("Great Success!")
     
     # # Performing postprocessing
     dirname = "$root_dir/opt_$(iter)/output"
 
     # Get cost vars 
     println("Running postprocessing on dir $(dirname)...")
-    qpeak, qtot, cap_hits = flare_post.get_cost_vars(dirname)
-    println("Great Success!")
-
-    return qpeak, qtot, cap_hits
+    flush(stdout)
+    qpeak, cap_hits = flare_post.get_cost_vars(dirname)
+    return qpeak, cap_hits
 end
 
 function cost(u, p)
@@ -85,16 +80,17 @@ function cost(u, p)
     global iter
     global flare_post
     global prev_cost
+    global CAP_COST
     # Passes left and right point into run simulations
     println("=================================================================")
     lp = u[1]
     rp = u[2]
     println("Running sim on iter $iter; (left point, right point = ($lp, $rp))")
-    qpeak, qtot, cap_hits = run_simulation(u[1], u[2]) 
+    qpeak, cap_hits = run_simulation(u[1], u[2]) 
     # Compute cost
-    money = flare_post.calculate_cost(qpeak, qtot, cap_hits)
-    println("Iter $iter: Cost = $money")
-    if iter != 1
+    money = flare_post.calculate_cost(qpeak, cap_hits, CAP_COST=CAP_COST)
+    # Output
+    if iter != 0
         println("Iter $iter: Cost = $money")
         pchange = ((money - prev_cost)/prev_cost)*100
         println("% cost change: $pchange")
@@ -103,6 +99,11 @@ function cost(u, p)
         prev_cost = money
     end
     flush(stdout)
+    # Save JSON with data
+    json_string = """{"iter": $iter, "left_point": $lp, "right_point": $rp, "cost": $money, "qpeak": $qpeak, "cap%": $cap_hits}"""
+    open("data.json", "w") do io
+        JSON3.write(io, json_string)
+    end
     # Increase iteration count
     iter += 1
 
