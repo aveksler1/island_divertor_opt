@@ -28,7 +28,6 @@ if rank == 0:
 
 comm.barrier()
 
-# tasks.init("/global/homes/a/aveksler/t1e/RUNS/input_files/grid/mmesh.nc", "boundary.nc", "tracing.nc")
 tasks.init_workspace("/global/homes/a/aveksler/t1e/RUNS/input_files/grid/mmesh.nc")
 tasks.set_boundary("boundary.nc")
 
