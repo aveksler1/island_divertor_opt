@@ -6,7 +6,6 @@ using Roots
 using DelimitedFiles
 using Dierckx
 using JSON3
-using Plots
 using Statistics
 
 """    
@@ -262,8 +261,8 @@ function make_simple_divertor(json_data, mg, island_boundary, o_points;
     z1 = spl(θl)[2]
     z2 = spl(θr)[2]
     # Computing vector along width of divertor
-    along_div_vec = [r1-r2, z1-z2]
-    along_div_vec = along_div_vec / norm(along_div_vec)
+    # along_div_vec = [r1-r2, z1-z2]
+    # along_div_vec = along_div_vec / norm(along_div_vec)
         
     if verbose
         println("real start point 1: ", r1," ",z1)
@@ -351,54 +350,10 @@ function make_simple_divertor(json_data, mg, island_boundary, o_points;
         zo = o_points[ix, 2]
         spl = make_island_spline(risl, zisl, ro, zo, eval_direction)
 
-        # ---- PLOTTING
-        # _, _, zisl = cartesian_coords_arr(risl, ones(size(risl))*ϕend1, zisl)
-        # # Grab right and left point
-        # # Plot island boundary 1
-        # p = Plots.plot(
-        #     # xisl, yisl, zisl, 
-        #     risl, zisl,
-        #     seriestype=:scatter,
-        #     color=:black,
-        #     markersize=2,
-        #     title = "Boundary + spline for ix: $ix",
-        #     xlims=(0.99*minimum(risl), 1.01*maximum(risl)),
-        #     ylims=(0.99*minimum(zisl), 1.01*maximum(zisl)),
-        # )
-
-        # theta_spl = range(0, 2*pi, 500)
-        # r_spl = zeros(length(theta_spl))
-        # z_spl = zeros(length(theta_spl))
-        # for (i, theta) in enumerate(theta_spl)
-        #     r, z = spl(theta)
-        #     r_spl[i] = r
-        #     z_spl[i] = z
-        # end
-        # x_spl, y_spl, z_spl = cartesian_coords_arr(r_spl, ones(size(theta_spl))*ϕend1, z_spl)
-        # Plots.plot!(p,
-        #     # x_spl, y_spl, z_spl,
-        #     r_spl, z_spl
-        # )
-        # ---- END PLOTTING
-
         # Get the θ values that are closest to the left and right points where
         # the field line ends up on the island boundary at the next phi plane
         θl = get_closest(spl, r1_0deg, z1_0deg, ro, zo, eval_direction)
         θr = get_closest(spl, r2_0deg, z2_0deg, ro, zo, eval_direction)
-
-        # ---- PLOTTING
-        # Plot the left and right points on the island boundary with the spline too
-        # rl_spl, zl_spl = spl(θl)
-        # rr_spl, zr_spl = spl(θr)
-        # Plots.plot!(p,
-        #     [rl_spl, rr_spl], [zl_spl, zr_spl], 
-        #     seriestype=:scatter,
-        #     markersize=4,
-        #     color=:blue,
-        # )
-        # display(p)
-        # ---- END PLOTTING
-
 
         #helper functions for the searching
         function fleft(x)
@@ -417,25 +372,6 @@ function make_simple_divertor(json_data, mg, island_boundary, o_points;
         # between the divertor at the previous plane and the current plane is 
         # equal to the target value. 
         angle = π/60
-
-        # --- PLOTTING
-        # dim = 50
-        # left = zeros(dim)
-        # right = zeros(dim)
-        # for (idx, k) in enumerate(range(θl-angle, θl+angle, dim))
-        #     left[idx] = fleft(k)
-        # end
-
-        # for (idx, k) in enumerate(range(θr-angle, θr+angle, dim))
-        #    right[idx] = fright(k)
-        # end
-
-        # p = Plots.plot(range(θl-angle, θl+angle, dim), left, title="ix: $ix")
-        # scatter!([θl- angle, θl, θl + angle], [fleft(θl-angle), fleft(θl), fleft(θl+angle)])
-        # plot!(range(θr-angle, θr+angle, dim), right)
-        # scatter!([θr-angle, θr, θr + angle], [fright(θr-angle), fright(θr), fright(θr+angle)])
-        # display(p)
-        # --- END PLOTTING
 
         θln = nothing
         θrn = nothing

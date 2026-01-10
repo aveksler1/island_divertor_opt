@@ -27,7 +27,7 @@ data_key = args.data_key
 
 print("Loading in data...")
 
-data = Dataset.loadnc(output_file)
+data = Dataset.loadnc(os.path.join(project_path, output_file))
 p = data[data_key] 
 
 data = p.plot(plot3d='vtk', vtk_show=None)

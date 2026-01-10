@@ -22,9 +22,15 @@ parser.add_argument("diffusion",
     help="Diffusion coefficient",
     type=float,
 )
+parser.add_argument("--bstep", 
+    help="Stepsize in magnetic field direction",
+    default=0.05,
+    type=float,
+)
 args = parser.parse_args()
 path = args.path
 diffusion_coeff = args.diffusion
+bstep = args.bstep
 
 os.chdir(path)
 
@@ -48,7 +54,7 @@ tasks.init_workspace("/global/homes/a/aveksler/t1e/RUNS/input_files/grid/mmesh.n
 tasks.set_boundary("boundary.nc")
 
 
-tasks.strike_point_density(diffusion_coeff, 100000, output="strike_points.nc")
+tasks.strike_point_density(diffusion_coeff, 100000, output="strike_points.nc", bstep=bstep)
 
 # density = 1.E19
 # temperature = 50 #in eV

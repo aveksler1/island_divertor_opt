@@ -1,3 +1,5 @@
+module DivertorMaker
+
 using MagneticFieldToolkit
 using LinearAlgebra
 using StaticArrays
@@ -6,17 +8,10 @@ using Roots
 using DelimitedFiles
 using Dierckx
 using JSON3
-using Plots
 using Statistics
 using Measures
 using NaNStatistics
-include("classical_divertor_l+_r-.jl")
-
-json_input_files = [
-    "classical_divertor_fwd.json", 
-    "classical_divertor_bwd.json"
-]
-
+include("/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/scripts/classical_divertor_final.jl")
 
 function get_island_spline(json_data, island_boundary, o_points)
     """
@@ -67,26 +62,25 @@ function save_divertor(left_pt, right_pt, spline)
     end
 end
 
-if length(ARGS) != 2
-    error("Requires 2 angles")
+json_input_files = [
+    "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_fwd.json", 
+    "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_bwd.json"
+]
+
+function run_divertor_creation(left_pt::Float64, right_pt::Float64)
+
+    println("Creating a divertor with (theta_l, theta_r) = ($left_pt, $right_pt)")
+
+    for file in json_input_files
+        json_data = JSON3.read(file)
+        island_boundary = readdlm(json_data.island_boundary_file,',')
+        o_points = get_o_points(
+            json_data.o_points_file, json_data.island, json_data.n_islands
+        )
+        spline = get_island_spline(json_data, island_boundary, o_points)
+        save_divertor(left_pt, right_pt, spline)
+    end
+
 end
 
-# The ARGS array contains the arguments as strings.
-arg1_str = ARGS[1]
-arg2_str = ARGS[2]
-
-# Convert the strings to integers.
-theta_l = parse(Float64, arg1_str)
-theta_r = parse(Float64, arg2_str)
-
-println("Creating a divertor with (theta_l, theta_r) = ($arg1_str, $arg2_str)")
-
-for file in json_input_files
-    json_data = JSON3.read(file)
-    island_boundary = readdlm(json_data.island_boundary_file,',')
-    o_points = get_o_points(
-        json_data.o_points_file, json_data.island, json_data.n_islands
-    )
-    spline = get_island_spline(json_data, island_boundary, o_points)
-    save_divertor(theta_l, theta_r, spline)
-end
+end # module

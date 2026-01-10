@@ -34,7 +34,7 @@ class HeatFluxDiagnostic(object):
 
         data = self.hflux['hload']*self.power
         self.peak_hflux = 0
-        for i in range(0, len(data.values)):
+        for i in [1, 2]: # Peak heat flux should be from only the plasma facing surfaces
             if np.max(data.values[i]) > self.peak_hflux:
                 self.peak_hflux = np.max(data.values[i])
         if self.verbose:
@@ -186,7 +186,7 @@ class HeatFluxDiagnostic(object):
 
         # Extract edges to bin
         edge = np.max(dist_to_center)
-        nbins = 70
+        nbins = 50
         bins = np.linspace(-edge, edge, nbins)
         output = np.full((len(bins) - 1, data.shape[1]), np.nan)
 
@@ -198,7 +198,14 @@ class HeatFluxDiagnostic(object):
             
         return output, bins
 
-    def plot(self):
+    def plot(self, save=True):
+        plt.rcParams.update({
+            # "text.usetex": True,  # Use LaTeX for text rendering
+            # "font.family": "serif",  # Use a serif font
+            "font.serif": ["Computer Modern Roman"],  # LaTeX default serif font
+            "font.size": 16,
+            "legend.fontsize": 10
+        })
         grid_fwd = self.hflux['hload'].grid.xcart[1]
         data_fwd = self.hflux['hload'].values[1]
         area_fwd = self.hflux['area'].values[1]
@@ -208,27 +215,54 @@ class HeatFluxDiagnostic(object):
 
         output_bwd, _ = self.reformat_data(grid_bwd, data_bwd, area_bwd)
         output_fwd, bins = self.reformat_data(grid_fwd, data_fwd, area_fwd)
-
-        output = np.hstack((output_bwd, output_fwd))
         
         cmap = cm.magma
         cmap.set_bad('white')
 
-        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        fig, ax = plt.subplots(1, 1)
+
+        output = np.hstack((output_bwd, output_fwd))
         xax = np.linspace(15, 45, output_fwd.shape[1] + output_bwd.shape[1] + 1)
 
-        im0 = ax[0].pcolormesh(bins, xax, output.T * self.power, cmap=cmap, shading='flat')
-        im1 = ax[1].pcolormesh((bins[1:] + bins[:-1])/2, (xax[1:] + xax[:-1])/2, output.T * self.power, cmap=cmap, shading='gouraud')
+        im0 = ax.pcolormesh(bins, xax, output.T * self.power, cmap=cmap, shading='flat')
 
-        plt.colorbar(im0, ax=ax[0], label = "Heat Flux [$\\frac{MW}{m^2}$]")
-        ax[0].set_xlabel("distance to center (m)")
-        ax[0].set_ylabel("$\\phi$ (deg.)")
+        plt.colorbar(im0, ax=ax, label = "Heat Flux [$\\frac{MW}{m^2}$]")
+        ax.set_xlabel("distance to center (m)")
+        ax.set_ylabel("$\\phi$ (deg.)")
+        fig.tight_layout()
 
-        plt.colorbar(im0, ax=ax[1], label = "Heat Flux [$\\frac{MW}{m^2}$]")
-        ax[1].set_xlabel("distance to center (m)")
-        ax[1].set_ylabel("$\\phi$ (deg.)")
+        if save:
+            plt.savefig("heat_flux.png", dpi=600, transparent=True)
+            plt.savefig("heat_flux.pdf", transparent=True)
+        
+    def plot_sp(self, save=False):
+        grid_fwd = self.strike_points['p'].grid.xcart[1]
+        data_fwd = self.strike_points['p'].values[1]
+        area_fwd = self.strike_points['area'].values[1]
+        grid_bwd = self.strike_points['p'].grid.xcart[2]
+        data_bwd = self.strike_points['p'].values[2]
+        area_bwd = self.strike_points['area'].values[2]
 
-        ax[0].set_title("Shading = flat")
-        ax[1].set_title("Shading = gouraud")
+        output_bwd, _ = self.reformat_data(grid_bwd, data_bwd, area_bwd)
+        output_fwd, bins = self.reformat_data(grid_fwd, data_fwd, area_fwd)
 
+        output = np.hstack((output_bwd, output_fwd))
+
+        cmap = cm.magma
+        cmap.set_bad('white')
+
+        fig, ax = plt.subplots(1, 1)
+
+        output = np.hstack((output_bwd, output_fwd))
+        xax = np.linspace(15, 45, output_fwd.shape[1] + output_bwd.shape[1] + 1)
+
+        fig, ax = plt.subplots(1, 1)
+
+        im0 = ax.pcolormesh(bins, xax, output.T * self.power, cmap=cmap, shading='flat')
+
+        plt.colorbar(im0, ax=ax, label = "Heat Flux [$\\frac{MW}{m^2}$]")
+        ax.set_xlabel("distance to center (m)")
+        ax.set_ylabel("$\\phi$ (deg.)")
+        if save:
+            plt.savefig("heat_flux_sp.png")
         fig.tight_layout()

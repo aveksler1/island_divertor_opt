@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: island_divertor_opt
+Version: 0.0.1
+Summary: Island divertor optimization framework
+Author: Avigdor Veksler
+Author-email: Avigdor Veksler <av3249@columbia.edu>
+Project-URL: Homepage, https://github.com/aveksler1/island_divertor_opt
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Dynamic: author
+
+# island_divertor_opt
+Island divertor generation and optimization for stellarators.
