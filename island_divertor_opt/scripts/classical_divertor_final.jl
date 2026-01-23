@@ -371,7 +371,7 @@ function make_simple_divertor(json_data, mg, island_boundary, o_points;
         # Finds at which point that fleft/fright return 0, aka when the angle
         # between the divertor at the previous plane and the current plane is 
         # equal to the target value. 
-        angle = π/60
+        angle = π/15 # changed 1/19/2026 # π/30 # changed 1/16/2026
 
         θln = nothing
         θrn = nothing
