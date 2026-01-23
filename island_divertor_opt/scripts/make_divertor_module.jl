@@ -11,6 +11,8 @@ using JSON3
 using Statistics
 using Measures
 using NaNStatistics
+using FilePathsBase
+
 include("/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/scripts/classical_divertor_final.jl")
 
 function get_island_spline(json_data, island_boundary, o_points)
@@ -42,23 +44,29 @@ function save_divertor(left_pt, right_pt, spline)
     strike angle), builds a divertor.
     """
     # First we load in the JSON file and modify the points
+    target_dir = joinpath(pwd(), "boundary")
+    mkpath(target_dir)
 
     for f in json_input_files
         read_only_json = JSON3.read(f)
         writeable_json = copy(read_only_json)
+
         r1, z1 = spline(right_pt)
         r2, z2 = spline(left_pt)
+
         writeable_json[:r1] = r1
         writeable_json[:z1] = z1
         writeable_json[:r2] = r2
         writeable_json[:z2] = z2
-        open(f, "w") do io
+
+        original_filename = basename(f)
+        new_file_path = joinpath(target_dir, original_filename)
+
+        open(new_file_path, "w") do io
             JSON3.write(io, writeable_json)
         end
-    end
 
-    for f in json_input_files
-        make_classical_divertor_from_json(f; verbose=false)
+        make_classical_divertor_from_json(new_file_path; verbose=false)
     end
 end
 
