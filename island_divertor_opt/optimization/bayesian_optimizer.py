@@ -41,6 +41,8 @@ class BayesianOptimizer(object):
         max_bound_right, 
         domain_lower_prefac,
         domain_upper_prefac,
+        xi=0.05,
+        nu=2.5,
         random_state=None
     ):
         self.root_dir = root_dir
@@ -52,6 +54,8 @@ class BayesianOptimizer(object):
         self.max_bound_right = max_bound_right
         self.domain_lower_prefac = domain_lower_prefac
         self.domain_upper_prefac = domain_upper_prefac
+        self.xi = xi
+        self.nu = nu
         self.random_state = random_state
         
         self.iteration = 0
@@ -96,7 +100,7 @@ class BayesianOptimizer(object):
         self.theta_1s = np.linspace(self.min_bound_left, self.max_bound_left, 1000)
         self.theta_2s = np.linspace(self.min_bound_right, self.max_bound_right, 1000)
 
-        self.acquisition_function = acquisition.ExpectedImprovement(xi=0.05)
+        self.acquisition_function = acquisition.ExpectedImprovement(xi=self.xi)
 
         pbounds = {
             'x': (self.min_bound_left, self.max_bound_left),
@@ -110,7 +114,12 @@ class BayesianOptimizer(object):
             random_state=self.random_state
         )
 
-        domain_range = 3.5 
+        domain_range = np.max(
+            [
+                self.max_bound_left - self.min_bound_left, 
+                self.max_bound_right-self.min_bound_right
+            ]
+        )
         lower = domain_range * self.domain_lower_prefac
         upper = domain_range * self.domain_upper_prefac
         bounds = (lower, upper)
@@ -119,7 +128,7 @@ class BayesianOptimizer(object):
         kernel = Matern(
             length_scale=domain_range * 0.5, 
             length_scale_bounds=bounds, 
-            nu=2.5
+            nu=self.nu
         )
 
         self.optimizer.set_gp_params(kernel=kernel, normalize_y=True, alpha=1e-2)
@@ -232,7 +241,6 @@ class BayesianOptimizer(object):
             return -money
         except Exception as e:
             print(f"Iteration {self.iteration} failed with error: {e}", flush=True)
-            self.iteration+=1
             return -200
         # lp = x
         # rp = y
