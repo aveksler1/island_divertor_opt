@@ -366,12 +366,13 @@ function make_simple_divertor(json_data, mg, island_boundary, o_points;
         end
 
 
+
         # Use optimization algorithms to find the left and right points of the 
         # divertor.
         # Finds at which point that fleft/fright return 0, aka when the angle
         # between the divertor at the previous plane and the current plane is 
         # equal to the target value. 
-        angle = π/15 # changed 1/19/2026 # π/30 # changed 1/16/2026
+        angle = π/30 # changed 1/16/2026
 
         θln = nothing
         θrn = nothing
@@ -448,9 +449,15 @@ end
 """    
 function close_divertor(wing_rl, wing_rr, wing_zl, wing_zr, close)
     vec = [wing_rl - wing_rr, wing_zl - wing_zr]
+    # This tries to ensure that the divertors are built outwards away from the magnetic axis,
+    # but could be more sophisticated. 
+    if vec[2] < 0
+        vec = [wing_rr - wing_rl, wing_zr - wing_zl]
+    end
     vecnorm = sqrt(sum(vec.^2))
     vec = vec / vecnorm
     vecrot = [-vec[2], vec[1]]
+    # println(vecrot)
     rc = zeros(3)
     zc = zeros(3)
     rc[1] = wing_rr + vecrot[1]*close
