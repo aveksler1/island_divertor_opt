@@ -157,16 +157,16 @@ class BayesianOptimizer(object):
         os.makedirs("boundary", exist_ok=True)
         os.makedirs("output", exist_ok=True)
         # Copy json files over
-        subprocess.run(
-            ["cp", "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_fwd.json", "."],
-            capture_output=True,
-            check=True    
-        )
-        subprocess.run(
-            ["cp", "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_bwd.json", "."],
-            capture_output=True,
-            check=True
-        )
+        # subprocess.run(
+        #     ["cp", "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_fwd.json", "."],
+        #     capture_output=True,
+        #     check=True    
+        # )
+        # subprocess.run(
+        #     ["cp", "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_bwd.json", "."],
+        #     capture_output=True,
+        #     check=True
+        # )
         # Make the actual divertor given the left point and right point
         print("Making divertor...", flush=True)
         t = time.time()
