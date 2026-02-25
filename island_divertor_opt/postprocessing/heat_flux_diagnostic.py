@@ -227,8 +227,8 @@ class HeatFluxDiagnostic(object):
         im0 = ax.pcolormesh(bins, xax, output.T * self.power, cmap=cmap, shading='flat')
 
         plt.colorbar(im0, ax=ax, label = "Heat Flux [$\\frac{MW}{m^2}$]")
-        ax.set_xlabel("distance to center (m)")
-        ax.set_ylabel("$\\phi$ (deg.)")
+        ax.set_xlabel("distance to center [m]")
+        ax.set_ylabel("$\\phi$ [deg.]")
         fig.tight_layout()
 
         if save:
@@ -261,8 +261,8 @@ class HeatFluxDiagnostic(object):
         im0 = ax.pcolormesh(bins, xax, output.T * self.power, cmap=cmap, shading='flat')
 
         plt.colorbar(im0, ax=ax, label = "Heat Flux [$\\frac{MW}{m^2}$]")
-        ax.set_xlabel("distance to center (m)")
-        ax.set_ylabel("$\\phi$ (deg.)")
+        ax.set_xlabel("distance to center [m]")
+        ax.set_ylabel("$\\phi$ [deg.]")
         if save:
             plt.savefig("heat_flux_sp.png")
         fig.tight_layout()
