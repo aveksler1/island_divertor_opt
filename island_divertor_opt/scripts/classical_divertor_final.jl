@@ -469,6 +469,67 @@ function close_divertor(wing_rl, wing_rr, wing_zl, wing_zr, close)
     return rc, zc
 end
 
+# function close_divertor(wing_rl, wing_rr, wing_zl, wing_zr, close)
+#     vec = [wing_rl - wing_rr, wing_zl - wing_zr]
+#     vecnorm = sqrt(sum(vec.^2))
+#     vec = vec / vecnorm
+    
+#     # 90-degree rotation to create the normal vector
+#     vecrot = [-vec[2], vec[1]]
+    
+#     # Ensure the backing always builds towards the outboard side (+R).
+#     if vecrot[1] < 0
+#         vecrot = -vecrot
+#     end
+    
+#     rc = zeros(3)
+#     zc = zeros(3)
+#     rc[1] = wing_rr + vecrot[1]*close
+#     zc[1] = wing_zr + vecrot[2]*close
+#     rc[3] = wing_rl + vecrot[1]*close
+#     zc[3] = wing_zl + vecrot[2]*close
+#     rc[2] = (rc[1]+rc[3])/2
+#     zc[2] = (zc[1]+zc[3])/2
+    
+#     return rc, zc
+# end
+
+# function close_divertor(wing_rl, wing_rr, wing_zl, wing_zr, close)
+#     vec = [wing_rl - wing_rr, wing_zl - wing_zr]
+#     vecnorm = norm(vec)
+#     vec = vec / vecnorm
+    
+#     # 90-degree rotation to create the normal vector
+#     vecrot = [-vec[2], vec[1]]
+    
+#     # Find the midpoint of the divertor plate
+#     r_mid = (wing_rl + wing_rr) / 2
+#     z_mid = (wing_zl + wing_zr) / 2
+
+#     R_axis = 12
+#     Z_axis = 0
+    
+#     # Create an outward-pointing reference vector from the axis to the divertor
+#     outward_vec = [r_mid - R_axis, z_mid - Z_axis]
+    
+#     # If the dot product is negative, the normal is pointing inwards toward the plasma.
+#     # Flip it so it always points away from the axis towards the wall.
+#     if dot(vecrot, outward_vec) < 0
+#         vecrot = -vecrot
+#     end
+    
+#     rc = zeros(3)
+#     zc = zeros(3)
+#     rc[1] = wing_rr + vecrot[1]*close
+#     zc[1] = wing_zr + vecrot[2]*close
+#     rc[3] = wing_rl + vecrot[1]*close
+#     zc[3] = wing_zl + vecrot[2]*close
+#     rc[2] = (rc[1]+rc[3])/2
+#     zc[2] = (zc[1]+zc[3])/2
+    
+#     return rc, zc
+# end
+
 """
 Function to get the divertor coords 
 """

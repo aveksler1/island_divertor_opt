@@ -2,14 +2,15 @@ import os
 import sys
 
 # --- CONFIGURATION ---
-JULIA_BIN = "/pscratch/sd/a/aveksler/julia/juliaup/julia-1.11.5+0.x64.linux.gnu/bin/julia"
-JULIA_ENV = "/pscratch/sd/a/aveksler/julia/environments/v1.11/"
-JULIA_DEPOT = "/pscratch/sd/a/aveksler/julia"
+JULIA_BIN = "/global/homes/a/aveksler/julia-1.11.1/bin/julia"
+JULIA_ENV = "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/software_env"
+JULIA_DEPOT = "/global/homes/a/aveksler/.julia"
 
 # --- THE HDF5 FIX (CRITICAL) ---
 # We take the path from your error message and force the system to read this folder first.
 # This ensures Julia finds its own HDF5, not the incompatible one from Conda.
-hdf5_artifact_path = "/pscratch/sd/a/aveksler/julia/artifacts/2117b531439d782e1cb0ebffcc4dcf11d274cc39/lib"
+# hdf5_artifact_path = "/pscratch/sd/a/aveksler/julia/artifacts/2117b531439d782e1cb0ebffcc4dcf11d274cc39/lib"
+hdf5_artifact_path = "/global/homes/a/aveksler/.julia/artifacts/2117b531439d782e1cb0ebffcc4dcf11d274cc39/lib"
 
 def _setup_environment():
     # 1. Standard Julia variables

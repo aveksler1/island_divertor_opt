@@ -28,7 +28,7 @@ if rank == 0:
 
 comm.barrier()
 
-tasks.init_workspace("/global/homes/a/aveksler/t1e/RUNS/input_files/grid/mmesh.nc")
+tasks.init_workspace("/global/cfs/cdirs/m4680/av3249/research/divertor_paper/data/input_files/mmesh.nc")
 tasks.set_boundary("boundary.nc")
 
 

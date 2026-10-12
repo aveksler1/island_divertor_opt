@@ -41,6 +41,8 @@ class BayesianOptimizer(object):
         max_bound_right, 
         domain_lower_prefac,
         domain_upper_prefac,
+        bwd_file_name,
+        fwd_file_name,
         xi=0.05,
         nu=2.5,
         random_state=None
@@ -57,6 +59,8 @@ class BayesianOptimizer(object):
         self.xi = xi
         self.nu = nu
         self.random_state = random_state
+        self.bwd_file_name = bwd_file_name
+        self.fwd_file_name = fwd_file_name
         
         self.iteration = 0
         self.CAP_COST = 1
@@ -170,7 +174,7 @@ class BayesianOptimizer(object):
         # Make the actual divertor given the left point and right point
         print("Making divertor...", flush=True)
         t = time.time()
-        jb.jl.DivertorMaker.run_divertor_creation(left_pt, right_pt)
+        jb.jl.DivertorMaker.run_divertor_creation(left_pt, right_pt, self.fwd_file_name, self.bwd_file_name)
         print(f"Time to make divertor: {time.time() - t} s", flush=True)
         print("Moving files...", flush=True)
 
@@ -242,26 +246,6 @@ class BayesianOptimizer(object):
         except Exception as e:
             print(f"Iteration {self.iteration} failed with error: {e}", flush=True)
             return -200
-        # lp = x
-        # rp = y
-        # print(f"Running sim: iter {self.iteration}; (left point, right point) = ({lp}, {rp}))")
-        # qpeak, cap_hits = self.run_simulation(lp, rp)
-        # money = calculate_cost(qpeak, cap_hits, CAP_COST=self.CAP_COST)
-        # # Save JSON with data
-        # data_to_save = {
-        #     "iter": self.iteration,
-        #     "left_point": lp,
-        #     "right_point": rp,
-        #     "cost": money,
-        #     "qpeak": qpeak,
-        #     "cap%": cap_hits
-        # }
-        # with open("data.json", "w") as io:
-        #     json.dump(data_to_save, io, indent=4)
-        # # Increase iteration count
-        # # Make negative so maximizing will actually minimize
-        # self.iteration+=1
-        # return -money
 
     def plot_gp(self):
         all_combinations = list(itertools.product(self.theta_1s, self.theta_2s))

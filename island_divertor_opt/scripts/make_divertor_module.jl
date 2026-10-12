@@ -13,7 +13,8 @@ using Measures
 using NaNStatistics
 using FilePathsBase
 
-include("/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/scripts/classical_divertor_final.jl")
+# include("/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/scripts/classical_divertor_final.jl")
+include("/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/scripts/classical_divertor_final2.jl")
 
 function get_island_spline(json_data, island_boundary, o_points)
     """
@@ -38,12 +39,11 @@ function get_island_spline(json_data, island_boundary, o_points)
     return spl
 end
 
-function save_divertor(left_pt, right_pt, spline)
+function save_divertor(left_pt, right_pt, spline, json_input_files)
     """
     From input parameters (left starting point, right starting point
     strike angle), builds a divertor.
     """
-    # First we load in the JSON file and modify the points
     target_dir = joinpath(pwd(), "boundary")
     mkpath(target_dir)
 
@@ -70,23 +70,32 @@ function save_divertor(left_pt, right_pt, spline)
     end
 end
 
-json_input_files = [
-    "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_fwd.json", 
-    "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_bwd.json"
-]
 
-function run_divertor_creation(left_pt::Float64, right_pt::Float64)
+
+function run_divertor_creation(left_pt::Float64, right_pt::Float64, fwd_file_name, bwd_file_name)
 
     println("Creating a divertor with (theta_l, theta_r) = ($left_pt, $right_pt)")
 
+    # json_input_files = [
+    #     "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_fwd.json", 
+    #     "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/classical_divertor_bwd.json"
+    # ]
+
+    base_path = "/global/homes/a/aveksler/t1e/repositories/island_divertor_opt/island_divertor_opt/boundary/"
+    json_input_files = [
+        joinpath(base_path, fwd_file_name),
+        joinpath(base_path, bwd_file_name)
+    ]
+
     for file in json_input_files
         json_data = JSON3.read(file)
-        island_boundary = readdlm(json_data.island_boundary_file,',')
+        island_boundary = readdlm(json_data.island_boundary_file, ',')
         o_points = get_o_points(
             json_data.o_points_file, json_data.island, json_data.n_islands
         )
         spline = get_island_spline(json_data, island_boundary, o_points)
-        save_divertor(left_pt, right_pt, spline)
+        
+        save_divertor(left_pt, right_pt, spline, json_input_files)
     end
 
 end

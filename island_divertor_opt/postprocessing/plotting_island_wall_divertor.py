@@ -3,6 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
+plt.rcParams.update({
+    "font.serif": ["Computer Modern Roman"],  # LaTeX default serif font
+    "font.size": 16,
+    "legend.fontsize": 10
+})
+
+
 class FilePlotter(object):
     """
     This class plots the divertor from a .txt file
@@ -12,7 +19,7 @@ class FilePlotter(object):
         self.file_name = file_name
         
     def read_text(self):
-        with open(os.path.join(self.project_path, "boundary", self.file_name)) as f:
+        with open(os.path.join(self.project_path, self.file_name)) as f:
             text = f.read()
             text = text.strip()
             entries = text.split('\n')
@@ -32,8 +39,8 @@ class FilePlotter(object):
             idx = i*(self.npoloidal + 1) + 1
             data = entries[idx:idx+self.npoloidal]
             # Grab first and second entry (data is stored as r, z)
-            r = np.array([j.split()[0] for j in data], dtype=np.double)
-            z = np.array([j.split()[1] for j in data], dtype=np.double)
+            r = np.array([j.split()[0] for j in data], dtype=np.double) / 100
+            z = np.array([j.split()[1] for j in data], dtype=np.double) / 100
             self.wall_dict[deg] = {'r':r, 'z':z}
 
         self.min_phi = self.deg_arr[0]
@@ -96,7 +103,7 @@ parser.add_argument("--divertor_file",
 parser.add_argument("--island_boundary_file", 
     help="Island boundary file name",
     type=str,
-    default="/global/homes/a/aveksler/t1e/postprocessing/island_boundary_halfdegree.csv"
+    default="/global/cfs/cdirs/m4680/av3249/research/divertor_paper/data/input_files/island_boundary_halfdegree.csv"
 )
 parser.add_argument("--pointsperperiod",
     help="How many points to go around",
@@ -134,7 +141,7 @@ if wall_file is not None:
     wall = FilePlotter(project_path, wall_file)
     wall.read_text()
     r, z = wall.get_interp_pts(phi)
-    ax.plot(r, z)
+    ax.plot(r, z, label = 'Wall')
 else:
     print("Wall file not provided.")
 # Plotting boundary
@@ -150,9 +157,11 @@ if island_boundary_file is not None:
             if (count - startval) % pointsperperiod == 0:
                 dum = line.split(",")
                 # convert to cm
-                r.append(float(dum[0])*100)
-                z.append(float(dum[1])*100)
-    ax.scatter(r, z, color='r', label= 'Island')
+                r.append(float(dum[0]))
+                z.append(float(dum[1]))
+
+    ax.scatter(r, z, color='r', label= 'Control Surface')
+
 else:
     print("Boundary file not provided.")
 # Plotting divertor
@@ -161,13 +170,15 @@ if divertor_file is not None:
     div.read_text()
     r, z = div.get_interp_pts(phi)
     ax.scatter(r, z, marker='*')
-    ax.plot(r, z)
+    ax.plot(r, z, label = "Divertor")
 else:
     print("Divertor file not provided.")
 
-ax.set_xlabel('r (cm)')
-ax.set_ylabel('z (cm)')
+ax.set_title(f'$\phi$={phi} degrees')
+ax.legend(loc='upper right')
+ax.set_xlabel('r [m]')
+ax.set_ylabel('z [m]')
 
 fig.tight_layout()
 
-plt.savefig(f"cross_section_phi={phi}.png")
+plt.savefig(f"cross_section_divertor_phi={phi}.pdf")

@@ -30,15 +30,30 @@ class HeatFluxDiagnostic(object):
 
     def calculate_peak_hflux(self):
         if not hasattr(self, 'hflux'):
-            raise Exception("hflux no provided! Cannot return peak hflux.")
-
-        data = self.hflux['hload']*self.power
+            if not hasattr(self, 'strike_points'):
+                raise Exception("No heat flux or strike point information available!")
+            
+        if hasattr(self, 'hflux'):
+            data = self.hflux['hload']*self.power
+        else:
+            data = self.strike_points['p']*self.power
         self.peak_hflux = 0
         for i in [1, 2]: # Peak heat flux should be from only the plasma facing surfaces
             if np.max(data.values[i]) > self.peak_hflux:
                 self.peak_hflux = np.max(data.values[i])
         if self.verbose:
             print(f"Peak Heat Flux: {self.peak_hflux}")
+
+    def calculate_hflux_wall(self):
+        if hasattr(self, 'hflux'):
+            data = self.hflux['hload']*self.power
+        else:
+            data = self.strike_points['p']*self.power
+
+        self.peak_wall_hflux = np.max(data.values[0])
+
+        if self.verbose:
+            print(f"Peak Heat Flux: {self.peak_wall_hflux}")
 
     def calculate_total_heat(self):
         """
